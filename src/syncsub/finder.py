@@ -15,16 +15,19 @@ from typing import List, Optional
 from .core import AlassError, SyncError, sync
 from .deps import check_all
 from .detect import DetectError, classify, list_embedded_subs
+from .i18n import t
 from .reveal import reveal
 
 
-def _dialog(message: str, title: str = "字幕按内嵌时间轴对齐") -> None:
+def _dialog(message: str, title: Optional[str] = None) -> None:
+    title = title or t("app_title")
+    ok = t("ok_button")
     subprocess.run(
         [
             "osascript",
             "-e",
             f'display dialog {_q(message)} with title {_q(title)} '
-            f'buttons {{"好"}} default button "好" with icon caution',
+            f'buttons {{{_q(ok)}}} default button {_q(ok)} with icon caution',
         ],
         check=False,
     )
@@ -35,7 +38,7 @@ def _choose(prompt: str, items: List[str]) -> Optional[int]:
     script = (
         f'set theList to {{{quoted}}}\n'
         f'set theChoice to choose from list theList with prompt {_q(prompt)} '
-        f'with title "选择内嵌字幕轨"\n'
+        f'with title {_q(t("choose_title"))}\n'
         f'if theChoice is false then return "__CANCEL__"\n'
         f'return item 1 of theChoice'
     )
@@ -60,7 +63,7 @@ def main(argv=None) -> int:
 
     missing = check_all()
     if missing:
-        _dialog("缺少命令：" + "、".join(missing) + "\n\n请先安装：brew install ffmpeg alass")
+        _dialog(t("missing_cmds", tools="、".join(missing)) + "\n\n" + t("mac_install_hint"))
         return 3
 
     try:
@@ -71,14 +74,14 @@ def main(argv=None) -> int:
 
     streams = list_embedded_subs(video)
     if not streams:
-        _dialog("目标视频没有内嵌字幕轨。")
+        _dialog(t("no_embedded"))
         return 2
 
     if len(streams) == 1:
         sub_index = 0
     else:
         labels = [s.label() for s in streams]
-        choice = _choose("该视频有多条内嵌字幕轨，请选择参考时间轴：", labels)
+        choice = _choose(t("choose_prompt"), labels)
         if choice is None:
             return 0
         sub_index = choice
@@ -86,7 +89,7 @@ def main(argv=None) -> int:
     try:
         result = sync(video, source, sub_index=sub_index)
     except AlassError as e:
-        _dialog(str(e) + "\n\n--- alass 日志（末 30 行）---\n" + e.log_tail)
+        _dialog(str(e) + "\n\n" + t("alass_log_header") + "\n" + e.log_tail)
         return 1
     except SyncError as e:
         _dialog(str(e))

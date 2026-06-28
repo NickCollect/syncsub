@@ -5,6 +5,8 @@ from __future__ import annotations
 import shutil
 from typing import Dict, List
 
+from .i18n import t
+
 # Candidate executable names per logical tool, in preference order.
 _CANDIDATES: Dict[str, List[str]] = {
     "ffmpeg": ["ffmpeg"],
@@ -12,18 +14,18 @@ _CANDIDATES: Dict[str, List[str]] = {
     "alass": ["alass-cli", "alass"],
 }
 
-_INSTALL_HINT = {
-    "ffmpeg": "macOS: brew install ffmpeg  |  Windows: 运行 install.ps1 自动下载",
-    "ffprobe": "macOS: brew install ffmpeg  |  Windows: 运行 install.ps1 自动下载",
-    "alass": "macOS: brew install alass  |  Windows: 运行 install.ps1 自动下载",
+_HINT_KEY = {
+    "ffmpeg": "hint_ffmpeg",
+    "ffprobe": "hint_ffmpeg",
+    "alass": "hint_alass",
 }
 
 
 class MissingDependency(Exception):
     def __init__(self, tool: str):
         self.tool = tool
-        hint = _INSTALL_HINT.get(tool, "")
-        super().__init__(f"缺少命令：{tool}。{hint}".rstrip())
+        hint = t(_HINT_KEY.get(tool, "hint_ffmpeg"))
+        super().__init__(t("missing_dep", tool=tool, hint=hint).rstrip())
 
 
 def resolve(tool: str) -> str:

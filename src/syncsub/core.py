@@ -11,6 +11,7 @@ from typing import Optional
 
 from .deps import resolve
 from .detect import list_embedded_subs
+from .i18n import t
 from .naming import build_output_path
 
 
@@ -54,8 +55,7 @@ def extract_reference(video: Path, sub_index: int, dest: Path) -> None:
     )
     if out.returncode != 0 or not dest.exists() or dest.stat().st_size == 0:
         raise ExtractError(
-            f"抽取内嵌字幕轨 #{sub_index} 失败，请尝试选择另一条字幕轨。\n"
-            + (out.stderr or "").strip()
+            t("extract_failed", idx=sub_index) + "\n" + (out.stderr or "").strip()
         )
 
 
@@ -68,7 +68,7 @@ def run_alass(reference: Path, source_sub: Path, output: Path) -> None:
     if out.returncode != 0 or not output.exists():
         combined = ((out.stdout or "") + "\n" + (out.stderr or "")).strip()
         tail = "\n".join(deque(combined.splitlines(), maxlen=30))
-        raise AlassError("字幕同步失败（alass）。", tail)
+        raise AlassError(t("alass_failed"), tail)
 
 
 def sync(
@@ -80,9 +80,9 @@ def sync(
     """Align `source_sub` to embedded track `sub_index` of `video`."""
     embedded = list_embedded_subs(video)
     if not embedded:
-        raise SyncError("目标视频没有内嵌字幕轨。")
+        raise SyncError(t("no_embedded"))
     if sub_index < 0 or sub_index >= len(embedded):
-        raise SyncError(f"内嵌字幕轨编号越界：#{sub_index}（共 {len(embedded)} 条）。")
+        raise SyncError(t("index_out_of_range", idx=sub_index, total=len(embedded)))
 
     out_path = output or build_output_path(video, source_sub)
     out_path.parent.mkdir(parents=True, exist_ok=True)

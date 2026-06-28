@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import List, Sequence
 
 from .deps import resolve
+from .i18n import t
 
 SUBTITLE_EXTS = {".srt", ".ass", ".ssa", ".sub", ".idx"}
 
@@ -62,24 +63,24 @@ def classify(files: Sequence[Path]) -> tuple[Path, Path]:
     """Return (video, subtitle) from exactly two inputs, order-independent."""
     paths = [Path(f) for f in files]
     if len(paths) != 2:
-        raise DetectError("请同时选中 1 个视频文件和 1 个字幕文件。")
+        raise DetectError(t("need_one_each"))
 
     subs = [p for p in paths if is_subtitle(p)]
     others = [p for p in paths if not is_subtitle(p)]
 
     if len(subs) == 2:
-        raise DetectError("只选 1 个源字幕。")
+        raise DetectError(t("one_sub_only"))
     if len(subs) == 0:
         if all(has_video_stream(p) for p in others):
-            raise DetectError("只选 1 个目标视频。")
-        raise DetectError("请同时选中 1 个视频文件和 1 个字幕文件。")
+            raise DetectError(t("one_video_only"))
+        raise DetectError(t("need_one_each"))
 
     source_sub = subs[0]
     video = others[0]
     if not has_video_stream(video):
         if is_subtitle(video):
-            raise DetectError("请同时选中 1 个视频文件和 1 个字幕文件。")
-        raise DetectError(f"无法识别视频文件：{video.name}")
+            raise DetectError(t("need_one_each"))
+        raise DetectError(t("not_a_video", name=video.name))
     return video, source_sub
 
 

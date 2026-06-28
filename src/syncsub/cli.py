@@ -16,17 +16,15 @@ from . import __version__
 from .core import SyncError, sync
 from .deps import MissingDependency, check_all
 from .detect import list_embedded_subs
+from .i18n import t
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(
-        prog="syncsub",
-        description="把源字幕对齐到视频的内嵌字幕时间轴。",
-    )
+    p = argparse.ArgumentParser(prog="syncsub", description=t("cli_desc"))
     p.add_argument("--version", action="version", version=f"syncsub {__version__}")
-    p.add_argument("--list", metavar="VIDEO", help="列出视频的内嵌字幕轨后退出")
-    p.add_argument("--sub", type=int, default=0, metavar="N", help="使用第 N 条内嵌字幕轨（默认 0）")
-    p.add_argument("args", nargs="*", help="SOURCE_SUB VIDEO [OUTPUT_SUB]")
+    p.add_argument("--list", metavar="VIDEO", help=t("cli_list_help"))
+    p.add_argument("--sub", type=int, default=0, metavar="N", help=t("cli_sub_help"))
+    p.add_argument("args", nargs="*", help=t("cli_args_help"))
     return p
 
 
@@ -41,7 +39,7 @@ def main(argv=None) -> int:
             print(str(e), file=sys.stderr)
             return 3
         if not streams:
-            print("目标视频没有内嵌字幕轨。", file=sys.stderr)
+            print(t("no_embedded"), file=sys.stderr)
             return 2
         for s in streams:
             print(s.label())
@@ -49,7 +47,7 @@ def main(argv=None) -> int:
 
     missing = check_all()
     if missing:
-        print("缺少命令：" + ", ".join(missing), file=sys.stderr)
+        print(t("missing_cmds", tools=", ".join(missing)), file=sys.stderr)
         return 3
 
     if len(ns.args) < 2:
@@ -61,10 +59,10 @@ def main(argv=None) -> int:
     output = Path(ns.args[2]) if len(ns.args) >= 3 else None
 
     if not source_sub.exists():
-        print(f"源字幕不存在：{source_sub}", file=sys.stderr)
+        print(t("source_missing", path=source_sub), file=sys.stderr)
         return 2
     if not video.exists():
-        print(f"视频不存在：{video}", file=sys.stderr)
+        print(t("video_missing", path=video), file=sys.stderr)
         return 2
 
     try:
@@ -73,7 +71,7 @@ def main(argv=None) -> int:
         print(str(e), file=sys.stderr)
         tail = getattr(e, "log_tail", "")
         if tail:
-            print("--- alass 日志（末 30 行）---", file=sys.stderr)
+            print(t("alass_log_header"), file=sys.stderr)
             print(tail, file=sys.stderr)
         return 1
 

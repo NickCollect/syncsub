@@ -18,6 +18,7 @@ from tkinter import filedialog, messagebox, ttk
 from .core import AlassError, SyncError, sync
 from .deps import check_all
 from .detect import DetectError, classify, list_embedded_subs
+from .i18n import t
 from .reveal import reveal
 
 try:
@@ -34,7 +35,7 @@ class App:
             self.root = TkinterDnD.Tk()
         else:
             self.root = tk.Tk()
-        self.root.title("字幕按内嵌时间轴对齐")
+        self.root.title(t("app_title"))
         self.root.geometry("560x420")
         self.files: List[Path] = []
 
@@ -45,7 +46,7 @@ class App:
 
         self.drop = tk.Label(
             self.root,
-            text="把 1 个视频 + 1 个字幕拖进来\n（顺序不限）",
+            text=t("gui_drop_label"),
             relief="ridge",
             bd=2,
             height=6,
@@ -57,14 +58,14 @@ class App:
             self.drop.drop_target_register(DND_FILES)
             self.drop.dnd_bind("<<Drop>>", self._on_drop)
         else:
-            tk.Button(self.root, text="选择文件…", command=self._pick).pack(**pad)
+            tk.Button(self.root, text=t("gui_pick_btn"), command=self._pick).pack(**pad)
 
         self.listbox = tk.Listbox(self.root, height=3)
         self.listbox.pack(fill="x", **pad)
 
         track_frame = tk.Frame(self.root)
         track_frame.pack(fill="x", **pad)
-        tk.Label(track_frame, text="内嵌字幕轨：").pack(side="left")
+        tk.Label(track_frame, text=t("gui_track_label")).pack(side="left")
         self.track_var = tk.StringVar()
         self.track_combo = ttk.Combobox(
             track_frame, textvariable=self.track_var, state="disabled", width=40
@@ -72,7 +73,7 @@ class App:
         self.track_combo.pack(side="left", fill="x", expand=True)
 
         self.run_btn = tk.Button(
-            self.root, text="开始对齐", command=self._run, state="disabled"
+            self.root, text=t("gui_run_btn"), command=self._run, state="disabled"
         )
         self.run_btn.pack(**pad)
 
@@ -80,7 +81,7 @@ class App:
         self.status.pack(fill="x", **pad)
 
         self.reveal_btn = tk.Button(
-            self.root, text="在文件管理器中显示", command=self._reveal, state="disabled"
+            self.root, text=t("gui_reveal_btn"), command=self._reveal, state="disabled"
         )
         self.reveal_btn.pack(**pad)
         self._last_output: Optional[Path] = None
@@ -115,7 +116,7 @@ class App:
         return out
 
     def _pick(self) -> None:
-        selected = filedialog.askopenfilenames(title="选择 1 个视频 + 1 个字幕")
+        selected = filedialog.askopenfilenames(title=t("gui_pick_title"))
         if selected:
             self._set_files([Path(p) for p in selected])
 
@@ -143,7 +144,7 @@ class App:
         self.source = source
         streams = list_embedded_subs(video)
         if not streams:
-            self._set_status("目标视频没有内嵌字幕轨。", "#b00")
+            self._set_status(t("no_embedded"), "#b00")
             return
 
         self._streams = streams
@@ -151,9 +152,9 @@ class App:
         self.track_combo.current(0)
         self.track_combo["state"] = "readonly" if len(streams) > 1 else "disabled"
         self.run_btn["state"] = "normal"
+        tail = t("gui_need_choose") if len(streams) > 1 else t("gui_use_first")
         self._set_status(
-            f"视频：{video.name}\n字幕：{source.name}\n共 {len(streams)} 条内嵌轨，"
-            + ("请选择后开始。" if len(streams) > 1 else "将使用第 0 条。"),
+            t("gui_summary", video=video.name, sub=source.name, count=len(streams), tail=tail),
             "#070",
         )
 
@@ -161,7 +162,7 @@ class App:
     def _run(self) -> None:
         sub_index = self.track_combo.current() if self.track_combo["state"] != "disabled" else 0
         self.run_btn["state"] = "disabled"
-        self._set_status("对齐中…", "#444")
+        self._set_status(t("gui_aligning"), "#444")
         threading.Thread(target=self._run_worker, args=(sub_index,), daemon=True).start()
 
     def _run_worker(self, sub_index: int) -> None:
@@ -177,7 +178,7 @@ class App:
 
     def _done(self, output: Path) -> None:
         self._last_output = output
-        self._set_status(f"完成：{output}", "#070")
+        self._set_status(t("gui_done", path=output), "#070")
         self.reveal_btn["state"] = "normal"
         self.run_btn["state"] = "normal"
 
@@ -185,7 +186,7 @@ class App:
         self._set_status(message, "#b00")
         self.run_btn["state"] = "normal"
         if log_tail:
-            messagebox.showerror("alass 日志（末 30 行）", log_tail)
+            messagebox.showerror(t("alass_log_header"), log_tail)
 
     def _reveal(self) -> None:
         if self._last_output:
@@ -197,7 +198,7 @@ class App:
     def run(self) -> None:
         missing = check_all()
         if missing:
-            self._set_status("缺少命令：" + ", ".join(missing), "#b00")
+            self._set_status(t("missing_cmds", tools=", ".join(missing)), "#b00")
         self.root.mainloop()
 
 

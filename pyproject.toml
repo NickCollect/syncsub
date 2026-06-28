@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "syncsub"
+version = "0.1.0"
+description = "把源字幕对齐到视频内嵌字幕的时间轴（基于 ffmpeg + alass）"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "GPL-3.0-or-later" }
+authors = [{ name = "syncsub contributors" }]
+keywords = ["subtitle", "alass", "ffmpeg", "sync", "alignment"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+]
+
+[project.optional-dependencies]
+gui = ["tkinterdnd2>=0.3"]
+
+[project.scripts]
+syncsub = "syncsub.cli:main"
+syncsub-gui = "syncsub.gui:main"
+syncsub-finder = "syncsub.finder:main"
+
+[project.urls]
+Homepage = "https://github.com/NickCollect/syncsub"
+Issues = "https://github.com/NickCollect/syncsub/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]

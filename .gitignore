@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Local tooling / editor configs
+.cursor/
+.claude/
+.idea/
+.vscode/
+.DS_Store
+
+# Test scratch
+*.synced.*
+tmp/

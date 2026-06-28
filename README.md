@@ -20,56 +20,81 @@
 
 ---
 
-## 安装
+## 第一步：下载本工具
 
-### 依赖
+在本页面顶部点击绿色的 **「Code」** 按钮 → **「Download ZIP」**，下载后**解压**。你会得到一个名为 `syncsub-main` 的文件夹。
 
-- [ffmpeg / ffprobe](https://ffmpeg.org/)
-- [alass](https://github.com/kaegi/alass)
-- Python 3.9+
-
-### macOS
-
-```bash
-git clone https://github.com/NickCollect/syncsub.git
-cd syncsub
-bash scripts/install-macos.sh
-```
-
-脚本会用 Homebrew 装 `ffmpeg`、`alass`，用 pipx 装 `syncsub`，并把 Finder 快捷操作装到 `~/Library/Services/`。
-
-最后手动绑定快捷键：**系统设置 → 键盘 → 键盘快捷键 → 服务 → 通用**，给「字幕按内嵌时间轴对齐」设为 `⌃⌥⌘S`。
-
-### Windows
-
-```powershell
-git clone https://github.com/NickCollect/syncsub.git
-cd syncsub
-powershell -ExecutionPolicy Bypass -File platform\windows\install.ps1
-```
-
-脚本会自动下载 `ffmpeg`、`alass` 到 `%LOCALAPPDATA%\syncsub\bin`，装好 `syncsub`，并创建「发送到」和开始菜单的快捷方式。
-
-> 拖拽功能需要 `tkinterdnd2`（已作为可选依赖随包安装）。没有它时窗口会退化为「选择文件」按钮。
+> 下面 macOS 和 Windows 的安装脚本，都需要在这个解压出来的文件夹里运行。
 
 ---
 
-## 用法
+## macOS 用户：一步步安装
 
-### macOS
+### 第 1 步：装 Homebrew（已装过可跳过）
 
-Finder 同时选中 **1 个视频 + 1 个字幕** → 右键「快捷操作 → 字幕按内嵌时间轴对齐」或按 `⌃⌥⌘S`。
+打开「终端」App（在「启动台」或用 Spotlight `⌘空格` 搜「终端」），把下面这行粘贴进去回车，按提示操作：
 
-### Windows
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
 
-开始菜单打开「字幕按内嵌时间轴对齐」，把 **1 个视频 + 1 个字幕** 拖进窗口；或在资源管理器选中两个文件 → 右键 → 发送到 → 字幕按内嵌时间轴对齐。
+### 第 2 步：运行安装脚本
 
-### 命令行（两端通用）
+在「终端」里输入 `cd ` （cd 后面有个空格），然后把第一步解压出来的 `syncsub-main` 文件夹**直接拖进终端窗口**（会自动填好路径），回车。再粘贴这行回车：
+
+```bash
+bash scripts/install-macos.sh
+```
+
+脚本会自动装好 `ffmpeg`、`alass` 和本工具，并把 Finder 快捷操作装好。看到「安装完成」即可。
+
+### 第 3 步：设置快捷键
+
+打开 **系统设置 → 键盘 → 键盘快捷键 → 服务 → 通用**，找到 **「字幕按内嵌时间轴对齐」**，点右侧设为 `⌃⌥⌘S`（Control + Option + Command + S）。
+
+### 怎么用
+
+在「访达 / Finder」里，**同时选中 1 个视频 + 1 个字幕**（按住 `⌘` 点第二个），然后：
+
+- 按快捷键 `⌃⌥⌘S`，**或**
+- 右键 → 快捷操作 → 「字幕按内嵌时间轴对齐」
+
+完成后，访达会自动跳到生成好的新字幕。
+
+---
+
+## Windows 用户：一步步安装
+
+### 第 1 步：装 Python（已装过可跳过）
+
+去 [python.org/downloads](https://www.python.org/downloads/) 下载并安装 Python 3.9 以上版本。**安装第一屏务必勾选「Add Python to PATH」**，再点 Install。
+
+### 第 2 步：运行安装程序
+
+打开第一步解压出来的 `syncsub-main` 文件夹，**双击里面的 `install-windows.cmd`**。
+
+> 如果弹出蓝色「Windows 已保护你的电脑」窗口，点「更多信息」→「仍要运行」。
+
+它会自动下载 `ffmpeg`、`alass`，装好本工具，并在「开始菜单」和「发送到」里创建快捷方式。看到「安装完成」后按任意键关闭。
+
+### 怎么用
+
+**方式一（推荐）**：开始菜单打开 **「字幕按内嵌时间轴对齐」**，把 **1 个视频 + 1 个字幕** 拖进窗口（顺序不限），按「开始对齐」。
+
+**方式二**：在资源管理器里选中视频 + 字幕两个文件 → 右键 → **发送到 → 字幕按内嵌时间轴对齐**。
+
+完成后窗口会显示输出路径，点「在文件管理器中显示」即可定位新字幕。
+
+---
+
+## 进阶：命令行用法（两端通用）
+
+安装后终端里可直接用：
 
 ```bash
 syncsub SOURCE_SUB VIDEO [OUTPUT_SUB]   # 对齐
-syncsub --list VIDEO                    # 列出内嵌字幕轨
-syncsub --sub N SOURCE_SUB VIDEO        # 指定第 N 条内嵌轨
+syncsub --list VIDEO                    # 列出视频里的内嵌字幕轨
+syncsub --sub N SOURCE_SUB VIDEO        # 指定用第 N 条内嵌轨
 ```
 
 ---

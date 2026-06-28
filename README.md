@@ -1,144 +1,144 @@
-# syncsub · Sync subtitles to a video's embedded timeline
+# syncsub · 字幕按内嵌时间轴对齐
 
-**English** | [简体中文](README.zh-CN.md)
+**简体中文** | [English](README.en.md)
 
-Align an **external source subtitle** to the timeline of a **target video's embedded subtitle track**.
+把**外挂源字幕**对齐到**目标视频内嵌字幕轨**的时间轴上。
 
-Typical case: you have a well-translated subtitle whose timing doesn't match your copy of the video (it was made for a different release), and your target video ships with an embedded subtitle that *is* correctly timed. This tool uses that embedded subtitle as the reference, runs [alass](https://github.com/kaegi/alass) to align your source subtitle to it, and writes a new, correctly-timed subtitle.
+适用场景：你有一份翻译质量好但时间轴对不上的字幕（来自另一个版本的视频），目标视频自带一条时间轴正确的内嵌字幕。本工具用目标视频的内嵌字幕作参考，用 [alass](https://github.com/kaegi/alass) 把源字幕对齐过去，输出一份时间轴正确的新字幕。
 
-- **macOS**: select the video + subtitle in Finder → Quick Action or shortcut `⌃⌥⌘S`
-- **Windows**: drag the video + subtitle into the window (order doesn't matter)
-- Shared Python core for detection, alignment, and naming on both platforms
-- UI and messages **switch between English / Chinese by system locale** (force with `SYNCSUB_LANG=zh|en`)
-
----
-
-## How it works
-
-1. `ffprobe` figures out which file is the video and which is the subtitle (order-independent).
-2. The video's embedded subtitle tracks are listed; if there are several, you pick one.
-3. `ffmpeg` extracts the chosen embedded subtitle as the reference timeline.
-4. `alass` aligns the source subtitle to that reference.
-5. The result is written **next to the source subtitle** and revealed in the file manager.
+- **macOS**：Finder 选中视频 + 字幕 → 右键快捷操作或快捷键 `⌃⌥⌘S`
+- **Windows**：把视频 + 字幕拖进窗口（顺序不限）
+- 核心判别、对齐、命名逻辑两端共用（Python）
+- 界面与提示**按系统语言自动切换中英文**（可用环境变量 `SYNCSUB_LANG=zh|en` 强制）
 
 ---
 
-## Step 1: Download the tool
+## 工作原理
 
-Click the green **"Code"** button at the top of this page → **"Download ZIP"**, then **unzip** it. You'll get a folder named `syncsub-main`.
-
-> The macOS and Windows installers below must be run from inside this unzipped folder.
+1. 用 `ffprobe` 自动判别哪个是视频、哪个是字幕（顺序无关）。
+2. 列出视频的内嵌字幕轨；多条时让你选择。
+3. 用 `ffmpeg` 抽出所选内嵌字幕作为参考时间轴。
+4. 用 `alass` 把源字幕对齐到该参考时间轴。
+5. 输出到**源字幕所在目录**，并在文件管理器中定位。
 
 ---
 
-## macOS: step-by-step
+## 第一步：下载本工具
 
-### 1. Install Homebrew (skip if you already have it)
+在本页面顶部点击绿色的 **「Code」** 按钮 → **「Download ZIP」**，下载后**解压**。你会得到一个名为 `syncsub-main` 的文件夹。
 
-Open the **Terminal** app (find it via Spotlight `⌘Space`), paste the line below, press Return, and follow the prompts:
+> 下面 macOS 和 Windows 的安装脚本，都需要在这个解压出来的文件夹里运行。
+
+---
+
+## macOS 用户：一步步安装
+
+### 第 1 步：装 Homebrew（已装过可跳过）
+
+打开「终端」App（在「启动台」或用 Spotlight `⌘空格` 搜「终端」），把下面这行粘贴进去回车，按提示操作：
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-### 2. Run the installer
+### 第 2 步：运行安装脚本
 
-In Terminal, type `cd ` (with a trailing space), then **drag the unzipped `syncsub-main` folder into the Terminal window** (it fills in the path) and press Return. Then paste:
+在「终端」里输入 `cd ` （cd 后面有个空格），然后把第一步解压出来的 `syncsub-main` 文件夹**直接拖进终端窗口**（会自动填好路径），回车。再粘贴这行回车：
 
 ```bash
 bash scripts/install-macos.sh
 ```
 
-It installs `ffmpeg`, `alass`, and the tool itself, and sets up the Finder Quick Action. You're done when you see the completion message.
+脚本会自动装好 `ffmpeg`、`alass` 和本工具，并把 Finder 快捷操作装好。看到「安装完成」即可。
 
-### 3. Assign the shortcut
+### 第 3 步：设置快捷键
 
-Open **System Settings → Keyboard → Keyboard Shortcuts → Services → General**, find **"字幕按内嵌时间轴对齐"** (the Quick Action), and set it to `⌃⌥⌘S` (Control + Option + Command + S).
+打开 **系统设置 → 键盘 → 键盘快捷键 → 服务 → 通用**，找到 **「字幕按内嵌时间轴对齐」**，点右侧设为 `⌃⌥⌘S`（Control + Option + Command + S）。
 
-### Usage
+### 怎么用
 
-In Finder, **select 1 video + 1 subtitle** (hold `⌘` to click the second), then:
+在「访达 / Finder」里，**同时选中 1 个视频 + 1 个字幕**（按住 `⌘` 点第二个），然后：
 
-- press `⌃⌥⌘S`, **or**
-- right-click → Quick Actions → the action above.
+- 按快捷键 `⌃⌥⌘S`，**或**
+- 右键 → 快捷操作 → 「字幕按内嵌时间轴对齐」
 
-When it finishes, Finder jumps to the newly generated subtitle.
-
----
-
-## Windows: step-by-step
-
-### 1. Install Python (skip if you already have it)
-
-Download and install Python 3.9+ from [python.org/downloads](https://www.python.org/downloads/). On the first screen, **be sure to tick "Add Python to PATH"**, then click Install.
-
-### 2. Run the installer
-
-Open the unzipped `syncsub-main` folder and **double-click `install-windows.cmd`**.
-
-> If a blue "Windows protected your PC" dialog appears, click "More info" → "Run anyway".
-
-It downloads `ffmpeg` and `alass`, installs the tool, and creates Start Menu and "Send to" shortcuts. Press a key to close when you see the completion message.
-
-### Usage
-
-**Option A (recommended):** open **"字幕按内嵌时间轴对齐"** from the Start Menu, drag **1 video + 1 subtitle** into the window (order doesn't matter), and click Align.
-
-**Option B:** in File Explorer, select the video + subtitle → right-click → **Send to → 字幕按内嵌时间轴对齐**.
-
-When it finishes, the window shows the output path; click "Show in file manager" to locate the new subtitle.
+完成后，访达会自动跳到生成好的新字幕。
 
 ---
 
-## Advanced: command line (both platforms)
+## Windows 用户：一步步安装
 
-After installing, use it directly from a terminal:
+### 第 1 步：装 Python（已装过可跳过）
+
+去 [python.org/downloads](https://www.python.org/downloads/) 下载并安装 Python 3.9 以上版本。**安装第一屏务必勾选「Add Python to PATH」**，再点 Install。
+
+### 第 2 步：运行安装程序
+
+打开第一步解压出来的 `syncsub-main` 文件夹，**双击里面的 `install-windows.cmd`**。
+
+> 如果弹出蓝色「Windows 已保护你的电脑」窗口，点「更多信息」→「仍要运行」。
+
+它会自动下载 `ffmpeg`、`alass`，装好本工具，并在「开始菜单」和「发送到」里创建快捷方式。看到「安装完成」后按任意键关闭。
+
+### 怎么用
+
+**方式一（推荐）**：开始菜单打开 **「字幕按内嵌时间轴对齐」**，把 **1 个视频 + 1 个字幕** 拖进窗口（顺序不限），按「开始对齐」。
+
+**方式二**：在资源管理器里选中视频 + 字幕两个文件 → 右键 → **发送到 → 字幕按内嵌时间轴对齐**。
+
+完成后窗口会显示输出路径，点「在文件管理器中显示」即可定位新字幕。
+
+---
+
+## 进阶：命令行用法（两端通用）
+
+安装后终端里可直接用：
 
 ```bash
-syncsub SOURCE_SUB VIDEO [OUTPUT_SUB]   # align
-syncsub --list VIDEO                    # list the video's embedded subtitle tracks
-syncsub --sub N SOURCE_SUB VIDEO        # use embedded track N
+syncsub SOURCE_SUB VIDEO [OUTPUT_SUB]   # 对齐
+syncsub --list VIDEO                    # 列出视频里的内嵌字幕轨
+syncsub --sub N SOURCE_SUB VIDEO        # 指定用第 N 条内嵌轨
 ```
 
 ---
 
-## Output naming
+## 输出命名规则
 
 ```
-output = video_stem + "." + lang_tag + ".synced." + source_extension
+输出名 = 视频名(去扩展名) + "." + 语言标签 + ".synced." + 源字幕扩展名
 ```
 
-- The **language tag** is the segment after the last `.` in the source subtitle's stem.
-- If the source has no language tag, it falls back to `<video_stem>.synced.<ext>`.
+- **语言标签**取源字幕文件名（去扩展名后）最后一个 `.` 之后的部分。
+- 源字幕没有语言标签时，回退为 `视频名.synced.扩展名`。
 
-Example:
+示例：
 
-| | Filename |
+| | 文件名 |
 |---|---|
-| Source subtitle | `The Bear S05E01 ...-FLUX.chs.简体&英文.ass` |
-| Target video | `The.Bear.S05E01.Soda.2160p...H.265-NTb.mkv` |
-| Output | `The.Bear.S05E01.Soda.2160p...H.265-NTb.简体&英文.synced.ass` |
+| 源字幕 | `The Bear S05E01 ...-FLUX.chs.简体&英文.ass` |
+| 目标视频 | `The.Bear.S05E01.Soda.2160p...H.265-NTb.mkv` |
+| 输出 | `The.Bear.S05E01.Soda.2160p...H.265-NTb.简体&英文.synced.ass` |
 
 ---
 
-## Supported formats
+## 支持格式
 
-Subtitles: `.srt` `.ass` `.ssa` `.sub` `.idx`　　Video: any container with a video stream (`.mkv` / `.mp4`, etc.).
+字幕：`.srt` `.ass` `.ssa` `.sub` `.idx`　　视频：任何含视频流的容器（`.mkv` / `.mp4` 等）。
 
-Both `.srt` and `.ass` source subtitles are supported; the output keeps the source's original format and extension.
+源字幕 `.srt` 和 `.ass` 都支持，输出保持源字幕的原格式和扩展名。
 
-> **About the reference track:** the embedded track used as the timing reference must be a **text subtitle** (srt / ass). If the video's embedded subtitle is an **image subtitle** (PGS, VobSub), it can't be extracted as a text reference — extraction fails and you'll be asked to pick another track. This is independent of whether your source subtitle is ass or srt.
+> **关于参考时间轴**：从视频里抽出来当参考的那条内嵌字幕轨，必须是**文本字幕**（srt / ass 这类）。如果视频内嵌的是**图形字幕**（PGS、VobSub），无法抽成文本参考，抽取会失败并提示换一条轨——这与你的源字幕是 ass 还是 srt 无关。
 
 ---
 
-## FAQ
+## 常见问题
 
-- **Video has no embedded subtitle track** → the tool tells you; it relies on an embedded track as the reference, so it can't run without one.
-- **Extraction failed** → try another track (some image subtitles such as PGS can't be extracted as a text reference).
-- **Sync failed** → the last 30 lines of the alass log are shown to help you debug.
+- **视频没有内嵌字幕轨** → 工具会提示；本工具依赖内嵌轨作参考，无内嵌轨无法使用。
+- **抽轨失败** → 换一条字幕轨重试（某些图形字幕如 PGS 无法抽成文本参考）。
+- **同步失败** → 会显示 alass 日志末 30 行，便于排查。
 
 ---
 
 ## License
 
-[GPL-3.0-or-later](LICENSE). This project invokes and may redistribute ffmpeg and alass; see their projects for their respective licenses.
+[GPL-3.0-or-later](LICENSE)。本项目调用并可分发 ffmpeg、alass，二者许可见各自项目。

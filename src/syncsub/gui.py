@@ -18,7 +18,14 @@ from tkinter import filedialog, messagebox, ttk
 from .core import AlassError, SyncError, sync
 from .deps import MissingDependency, check_all
 from .detect import DetectError, classify, list_embedded_subs
-from .i18n import t
+from .i18n import (
+    get_lang,
+    has_env_override,
+    load_saved_lang,
+    save_lang,
+    set_lang,
+    t,
+)
 from .reveal import reveal
 
 try:
@@ -44,6 +51,13 @@ class App:
     def _build(self) -> None:
         pad = dict(padx=16, pady=8)
 
+        top_bar = tk.Frame(self.root)
+        top_bar.pack(fill="x", padx=16, pady=(8, 0))
+        self._lang_btn = tk.Button(
+            top_bar, text=self._lang_btn_text(), command=self._toggle_lang
+        )
+        self._lang_btn.pack(side="right")
+
         self.drop = tk.Label(
             self.root,
             text=t("gui_drop_label"),
@@ -54,18 +68,21 @@ class App:
         )
         self.drop.pack(fill="x", **pad)
 
+        self._pick_btn: Optional[tk.Button] = None
         if _DND:
             self.drop.drop_target_register(DND_FILES)
             self.drop.dnd_bind("<<Drop>>", self._on_drop)
         else:
-            tk.Button(self.root, text=t("gui_pick_btn"), command=self._pick).pack(**pad)
+            self._pick_btn = tk.Button(self.root, text=t("gui_pick_btn"), command=self._pick)
+            self._pick_btn.pack(**pad)
 
         self.listbox = tk.Listbox(self.root, height=3)
         self.listbox.pack(fill="x", **pad)
 
         track_frame = tk.Frame(self.root)
         track_frame.pack(fill="x", **pad)
-        tk.Label(track_frame, text=t("gui_track_label")).pack(side="left")
+        self._track_label = tk.Label(track_frame, text=t("gui_track_label"))
+        self._track_label.pack(side="left")
         self.track_var = tk.StringVar()
         self.track_combo = ttk.Combobox(
             track_frame, textvariable=self.track_var, state="disabled", width=40
@@ -85,6 +102,36 @@ class App:
         )
         self.reveal_btn.pack(**pad)
         self._last_output: Optional[Path] = None
+
+    # ---- language toggle ------------------------------------------------
+    def _lang_btn_text(self) -> str:
+        # Show the language you would switch TO.
+        return "English" if get_lang() == "zh" else "中文"
+
+    def _toggle_lang(self) -> None:
+        new_lang = "en" if get_lang() == "zh" else "zh"
+        set_lang(new_lang)
+        save_lang(new_lang)
+        self._retext()
+
+    def _retext(self) -> None:
+        self.root.title(t("app_title"))
+        self.drop.configure(text=t("gui_drop_label"))
+        if self._pick_btn is not None:
+            self._pick_btn.configure(text=t("gui_pick_btn"))
+        self._track_label.configure(text=t("gui_track_label"))
+        self.run_btn.configure(text=t("gui_run_btn"))
+        self.reveal_btn.configure(text=t("gui_reveal_btn"))
+        self._lang_btn.configure(text=self._lang_btn_text())
+        # Re-render the status line in the new language.
+        if self.files:
+            self._classify()
+        else:
+            missing = check_all()
+            if missing:
+                self._set_status(t("missing_cmds", tools=", ".join(missing)), "#b00")
+            else:
+                self._set_status("", "#444")
 
     # ---- input handling -------------------------------------------------
     def _on_drop(self, event) -> None:
@@ -203,6 +250,11 @@ class App:
 
 
 def main(argv=None) -> int:
+    # Precedence: SYNCSUB_LANG env > saved config > auto-detection.
+    if not has_env_override():
+        saved = load_saved_lang()
+        if saved:
+            set_lang(saved)
     app = App()
     args = list(argv) if argv is not None else sys.argv[1:]
     if args:

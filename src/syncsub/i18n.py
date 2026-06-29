@@ -5,6 +5,7 @@ Override with the SYNCSUB_LANG environment variable ("zh" or "en").
 
 from __future__ import annotations
 
+import json
 import locale
 import os
 import subprocess
@@ -13,6 +14,20 @@ import sys
 
 def _norm(value: str) -> str:
     return "zh" if str(value).lower().startswith("zh") else "en"
+
+
+def _windows_preferred_lang() -> str:
+    """'zh' if the Windows user UI language is Chinese, else '' (unknown)."""
+    try:
+        import ctypes
+
+        langid = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+        # Primary language id is the low 10 bits; 0x04 == LANG_CHINESE.
+        if (langid & 0x3FF) == 0x04:
+            return "zh"
+        return "en"
+    except Exception:
+        return ""
 
 
 def _macos_preferred_lang() -> str:
@@ -47,6 +62,13 @@ def _detect_lang() -> str:
         if mac:
             return _norm(mac)
 
+    # On Windows (especially the frozen app) POSIX locale env is usually unset
+    # and locale.getdefaultlocale() is unreliable, so ask the OS directly.
+    if sys.platform.startswith("win"):
+        win = _windows_preferred_lang()
+        if win:
+            return win
+
     for var in ("LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"):
         value = os.environ.get(var)
         if value:
@@ -65,6 +87,55 @@ def _detect_lang() -> str:
 
 
 LANG = _detect_lang()
+
+# The language `t()` actually renders. Starts at the auto-detected default and
+# can be overridden at runtime (e.g. by the GUI toggle) via set_lang().
+_current_lang = LANG
+
+
+def set_lang(lang: str) -> None:
+    global _current_lang
+    _current_lang = _norm(lang)
+
+
+def get_lang() -> str:
+    return _current_lang
+
+
+def has_env_override() -> bool:
+    return bool(os.environ.get("SYNCSUB_LANG", ""))
+
+
+def _config_path() -> str:
+    if sys.platform.startswith("win"):
+        base = os.environ.get("APPDATA") or os.path.expanduser("~")
+    else:
+        base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(
+            os.path.expanduser("~"), ".config"
+        )
+    return os.path.join(base, "syncsub", "config.json")
+
+
+def load_saved_lang() -> str:
+    """Return a normalized saved language, or '' if none/unreadable."""
+    try:
+        with open(_config_path(), "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception:
+        return ""
+    lang = data.get("lang", "") if isinstance(data, dict) else ""
+    return _norm(lang) if lang else ""
+
+
+def save_lang(lang: str) -> None:
+    path = _config_path()
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump({"lang": _norm(lang)}, fh)
+    except Exception:
+        pass
+
 
 MESSAGES = {
     # ---- detection ----
@@ -196,7 +267,7 @@ MESSAGES = {
 
 def t(key: str, **kwargs) -> str:
     entry = MESSAGES.get(key, {})
-    text = entry.get(LANG) or entry.get("en") or key
+    text = entry.get(_current_lang) or entry.get("en") or key
     if kwargs:
         try:
             text = text.format(**kwargs)

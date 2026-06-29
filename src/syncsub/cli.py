@@ -15,7 +15,7 @@ from pathlib import Path
 from . import __version__
 from .core import SyncError, sync
 from .deps import MissingDependency, check_all
-from .detect import list_embedded_subs
+from .detect import DetectError, classify, has_video_stream, list_embedded_subs
 from .i18n import t
 
 
@@ -33,8 +33,12 @@ def main(argv=None) -> int:
     ns = parser.parse_args(argv)
 
     if ns.list:
+        video = Path(ns.list)
         try:
-            streams = list_embedded_subs(Path(ns.list))
+            if not has_video_stream(video):
+                print(t("not_a_video", name=video.name), file=sys.stderr)
+                return 2
+            streams = list_embedded_subs(video)
         except MissingDependency as e:
             print(str(e), file=sys.stderr)
             return 3
@@ -53,16 +57,25 @@ def main(argv=None) -> int:
     if len(ns.args) < 2:
         parser.print_usage(sys.stderr)
         return 64
+    if len(ns.args) > 3:
+        print(t("too_many_args"), file=sys.stderr)
+        return 64
 
-    source_sub = Path(ns.args[0])
-    video = Path(ns.args[1])
+    file_a = Path(ns.args[0])
+    file_b = Path(ns.args[1])
     output = Path(ns.args[2]) if len(ns.args) >= 3 else None
 
-    if not source_sub.exists():
-        print(t("source_missing", path=source_sub), file=sys.stderr)
-        return 2
-    if not video.exists():
-        print(t("video_missing", path=video), file=sys.stderr)
+    for f in (file_a, file_b):
+        if not f.exists():
+            print(t("source_missing", path=f), file=sys.stderr)
+            return 2
+
+    # Order-independent: figure out which input is the video and which is the
+    # subtitle (this also rejects "two subtitles" / "two videos").
+    try:
+        video, source_sub = classify([file_a, file_b])
+    except DetectError as e:
+        print(str(e), file=sys.stderr)
         return 2
 
     try:

@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 from .deps import resolve
-from .detect import list_embedded_subs
+from .detect import has_video_stream, list_embedded_subs
 from .i18n import t
 from .naming import build_output_path
 
@@ -78,6 +78,8 @@ def sync(
     output: Optional[Path] = None,
 ) -> SyncResult:
     """Align `source_sub` to embedded track `sub_index` of `video`."""
+    if not has_video_stream(video):
+        raise SyncError(t("not_a_video", name=video.name))
     embedded = list_embedded_subs(video)
     if not embedded:
         raise SyncError(t("no_embedded"))

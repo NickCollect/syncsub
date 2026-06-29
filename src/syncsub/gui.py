@@ -16,7 +16,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from .core import AlassError, SyncError, sync
-from .deps import check_all
+from .deps import MissingDependency, check_all
 from .detect import DetectError, classify, list_embedded_subs
 from .i18n import t
 from .reveal import reveal
@@ -136,7 +136,7 @@ class App:
 
         try:
             video, source = classify(self.files)
-        except DetectError as e:
+        except (DetectError, MissingDependency) as e:
             self._set_status(str(e), "#b00")
             return
 

@@ -7,16 +7,50 @@ from __future__ import annotations
 
 import locale
 import os
+import subprocess
+import sys
+
+
+def _norm(value: str) -> str:
+    return "zh" if str(value).lower().startswith("zh") else "en"
+
+
+def _macos_preferred_lang() -> str:
+    """First entry of macOS AppleLanguages, e.g. 'zh-Hans-CN'. Empty if unknown."""
+    try:
+        out = subprocess.run(
+            ["defaults", "read", "-g", "AppleLanguages"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except Exception:
+        return ""
+    if out.returncode != 0:
+        return ""
+    for line in out.stdout.splitlines():
+        token = line.strip().strip(",").strip('"')
+        if token and token not in ("(", ")"):
+            return token
+    return ""
 
 
 def _detect_lang() -> str:
     override = os.environ.get("SYNCSUB_LANG", "")
     if override:
-        return "zh" if override.lower().startswith("zh") else "en"
+        return _norm(override)
+
+    # On macOS the user's real UI language lives in AppleLanguages, not in a
+    # terminal's LANG (which is often a generic C.UTF-8). Prefer it.
+    if sys.platform == "darwin":
+        mac = _macos_preferred_lang()
+        if mac:
+            return _norm(mac)
+
     for var in ("LC_ALL", "LC_MESSAGES", "LANG", "LANGUAGE"):
         value = os.environ.get(var)
         if value:
-            return "zh" if value.lower().startswith("zh") else "en"
+            return _norm(value)
     loc = ""
     try:
         loc = locale.getlocale()[0] or ""
@@ -27,7 +61,7 @@ def _detect_lang() -> str:
             loc = locale.getdefaultlocale()[0] or ""  # noqa: DEP008 (fallback)
         except Exception:
             loc = ""
-    return "zh" if str(loc).lower().startswith("zh") else "en"
+    return _norm(loc)
 
 
 LANG = _detect_lang()
@@ -116,6 +150,10 @@ MESSAGES = {
     "video_missing": {
         "zh": "视频不存在：{path}",
         "en": "Video not found: {path}",
+    },
+    "too_many_args": {
+        "zh": "参数过多，最多 3 个：SOURCE_SUB VIDEO [OUTPUT_SUB]",
+        "en": "Too many arguments; at most 3: SOURCE_SUB VIDEO [OUTPUT_SUB]",
     },
     # ---- shared title ----
     "app_title": {

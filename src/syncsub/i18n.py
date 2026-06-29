@@ -242,12 +242,29 @@ MESSAGES = {
     },
     "ok_button": {"zh": "好", "en": "OK"},
     # ---- gui ----
+    "gui_tagline": {
+        "zh": "把字幕对齐到视频内嵌字幕的时间轴",
+        "en": "Align a subtitle to the video's embedded subtitle timeline",
+    },
+    "gui_step1": {
+        "zh": "① 把 1 个视频 + 1 个字幕拖入下方区域（顺序不限）",
+        "en": "① Add 1 video + 1 subtitle below (order does not matter)",
+    },
     "gui_drop_label": {
         "zh": "把 1 个视频 + 1 个字幕拖进来\n（顺序不限）",
         "en": "Drag 1 video + 1 subtitle here\n(order does not matter)",
     },
     "gui_pick_btn": {"zh": "选择文件…", "en": "Choose files…"},
     "gui_track_label": {"zh": "内嵌字幕轨：", "en": "Embedded track:"},
+    "gui_choose_prompt": {
+        "zh": "② 👉 请选择参考字幕轨：",
+        "en": "② 👉 Choose the reference subtitle track:",
+    },
+    "gui_auto_track": {
+        "zh": "✓ 已自动使用视频的内嵌字幕轨",
+        "en": "✓ Using the video's embedded track automatically",
+    },
+    "gui_step3_btn": {"zh": "③ 开始对齐", "en": "③ Align"},
     "gui_run_btn": {"zh": "开始对齐", "en": "Align"},
     "gui_reveal_btn": {"zh": "在文件管理器中显示", "en": "Show in file manager"},
     "gui_pick_title": {

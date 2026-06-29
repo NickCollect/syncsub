@@ -43,27 +43,37 @@ class App:
         else:
             self.root = tk.Tk()
         self.root.title(t("app_title"))
-        self.root.geometry("560x420")
+        self.root.geometry("560x500")
         self.files: List[Path] = []
 
         self._build()
 
     def _build(self) -> None:
-        pad = dict(padx=16, pady=8)
+        pad = dict(padx=16, pady=6)
 
+        # Top bar: one-line description (left) + language toggle (right).
         top_bar = tk.Frame(self.root)
-        top_bar.pack(fill="x", padx=16, pady=(8, 0))
+        top_bar.pack(fill="x", padx=16, pady=(10, 0))
         self._lang_btn = tk.Button(
             top_bar, text=self._lang_btn_text(), command=self._toggle_lang
         )
         self._lang_btn.pack(side="right")
+        self._tagline = tk.Label(top_bar, text=t("gui_tagline"), fg="#666", anchor="w")
+        self._tagline.pack(side="left", fill="x", expand=True)
+
+        # Step 1: add files.
+        self._step1 = tk.Label(
+            self.root, text=t("gui_step1"), fg="#222", anchor="w",
+            font=("", 11, "bold"),
+        )
+        self._step1.pack(fill="x", padx=16, pady=(10, 0))
 
         self.drop = tk.Label(
             self.root,
             text=t("gui_drop_label"),
             relief="ridge",
             bd=2,
-            height=6,
+            height=5,
             fg="#444",
         )
         self.drop.pack(fill="x", **pad)
@@ -74,25 +84,39 @@ class App:
             self.drop.dnd_bind("<<Drop>>", self._on_drop)
         else:
             self._pick_btn = tk.Button(self.root, text=t("gui_pick_btn"), command=self._pick)
-            self._pick_btn.pack(**pad)
+            self._pick_btn.pack(pady=(0, 4))
 
-        self.listbox = tk.Listbox(self.root, height=3)
+        self.listbox = tk.Listbox(self.root, height=2)
         self.listbox.pack(fill="x", **pad)
 
-        track_frame = tk.Frame(self.root)
-        track_frame.pack(fill="x", **pad)
-        self._track_label = tk.Label(track_frame, text=t("gui_track_label"))
-        self._track_label.pack(side="left")
+        # Step 2: track chooser — only revealed when there are multiple tracks.
+        # When a video has a single track, a tiny note is shown instead.
+        self.step2_frame = tk.Frame(self.root)
+        self.step2_frame.pack(fill="x", **pad)
+        self._track_prompt = tk.Label(
+            self.step2_frame, text=t("gui_choose_prompt"), fg="#b3005e",
+            font=("", 11, "bold"), anchor="w",
+        )
         self.track_var = tk.StringVar()
         self.track_combo = ttk.Combobox(
-            track_frame, textvariable=self.track_var, state="disabled", width=40
+            self.step2_frame, textvariable=self.track_var, state="readonly"
         )
-        self.track_combo.pack(side="left", fill="x", expand=True)
+        self._auto_note = tk.Label(self.step2_frame, text=t("gui_auto_track"), fg="#888", anchor="w")
 
+        # Step 3: prominent Align button.
         self.run_btn = tk.Button(
-            self.root, text=t("gui_run_btn"), command=self._run, state="disabled"
+            self.root, text=t("gui_step3_btn"), command=self._run, state="disabled",
+            font=("", 13, "bold"), height=2,
         )
-        self.run_btn.pack(**pad)
+        try:
+            self.run_btn.configure(
+                bg="#2e7d32", fg="white",
+                activebackground="#256628", activeforeground="white",
+                disabledforeground="#dddddd",
+            )
+        except tk.TclError:
+            pass
+        self.run_btn.pack(fill="x", **pad)
 
         self.status = tk.Label(self.root, text="", fg="#444", wraplength=520, justify="left")
         self.status.pack(fill="x", **pad)
@@ -102,6 +126,17 @@ class App:
         )
         self.reveal_btn.pack(**pad)
         self._last_output: Optional[Path] = None
+
+    def _set_step2(self, mode: str) -> None:
+        """Show the right step-2 widgets: 'hidden', 'single' or 'multi'."""
+        self._track_prompt.pack_forget()
+        self.track_combo.pack_forget()
+        self._auto_note.pack_forget()
+        if mode == "multi":
+            self._track_prompt.pack(fill="x", anchor="w")
+            self.track_combo.pack(fill="x", pady=(4, 0))
+        elif mode == "single":
+            self._auto_note.pack(fill="x", anchor="w")
 
     # ---- language toggle ------------------------------------------------
     def _lang_btn_text(self) -> str:
@@ -116,14 +151,17 @@ class App:
 
     def _retext(self) -> None:
         self.root.title(t("app_title"))
+        self._tagline.configure(text=t("gui_tagline"))
+        self._step1.configure(text=t("gui_step1"))
         self.drop.configure(text=t("gui_drop_label"))
         if self._pick_btn is not None:
             self._pick_btn.configure(text=t("gui_pick_btn"))
-        self._track_label.configure(text=t("gui_track_label"))
-        self.run_btn.configure(text=t("gui_run_btn"))
+        self._track_prompt.configure(text=t("gui_choose_prompt"))
+        self._auto_note.configure(text=t("gui_auto_track"))
+        self.run_btn.configure(text=t("gui_step3_btn"))
         self.reveal_btn.configure(text=t("gui_reveal_btn"))
         self._lang_btn.configure(text=self._lang_btn_text())
-        # Re-render the status line in the new language.
+        # Re-render the status line (and step-2 visibility) in the new language.
         if self.files:
             self._classify()
         else:
@@ -176,7 +214,7 @@ class App:
 
     def _classify(self) -> None:
         self.track_combo.set("")
-        self.track_combo["state"] = "disabled"
+        self._set_step2("hidden")
         self.run_btn["state"] = "disabled"
         self.reveal_btn["state"] = "disabled"
         self._set_status("", "#444")
@@ -197,9 +235,10 @@ class App:
         self._streams = streams
         self.track_combo["values"] = [s.label() for s in streams]
         self.track_combo.current(0)
-        self.track_combo["state"] = "readonly" if len(streams) > 1 else "disabled"
+        multi = len(streams) > 1
+        self._set_step2("multi" if multi else "single")
         self.run_btn["state"] = "normal"
-        tail = t("gui_need_choose") if len(streams) > 1 else t("gui_use_first")
+        tail = t("gui_need_choose") if multi else t("gui_use_first")
         self._set_status(
             t("gui_summary", video=video.name, sub=source.name, count=len(streams), tail=tail),
             "#070",
@@ -207,7 +246,9 @@ class App:
 
     # ---- run ------------------------------------------------------------
     def _run(self) -> None:
-        sub_index = self.track_combo.current() if self.track_combo["state"] != "disabled" else 0
+        sub_index = self.track_combo.current()
+        if sub_index < 0:
+            sub_index = 0
         self.run_btn["state"] = "disabled"
         self._set_status(t("gui_aligning"), "#444")
         threading.Thread(target=self._run_worker, args=(sub_index,), daemon=True).start()

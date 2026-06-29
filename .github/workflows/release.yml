@@ -61,8 +61,9 @@ jobs:
             ($rel.assets | Where-Object { $_.name -match $pattern } | Select-Object -First 1).browser_download_url
           }
 
-          # ffmpeg + ffprobe
-          $ff = Get-Asset "BtbN/FFmpeg-Builds" "win64-gpl.*\.zip$"
+          # ffmpeg + ffprobe — the STATIC gpl build (single self-contained exe,
+          # not the "-shared" variant which needs separate DLLs).
+          $ff = Get-Asset "BtbN/FFmpeg-Builds" "win64-gpl\.zip$"
           Invoke-WebRequest $ff -OutFile ff.zip
           Expand-Archive ff.zip -DestinationPath ff -Force
           Copy-Item (Get-ChildItem ff -Recurse -Filter ffmpeg.exe   | Select-Object -First 1).FullName bin\ffmpeg.exe
@@ -75,6 +76,12 @@ jobs:
           Copy-Item (Get-ChildItem alass -Recurse -Filter "alass*.exe" | Select-Object -First 1).FullName bin\alass.exe
 
           Get-ChildItem bin
+
+          # Fail fast if we grabbed a non-static ffmpeg (would be a tiny stub).
+          if ((Get-Item bin\ffmpeg.exe).Length -lt 30MB) {
+            throw "ffmpeg.exe is only $((Get-Item bin\ffmpeg.exe).Length) bytes — expected a static build (>30MB)."
+          }
+          & .\bin\ffmpeg.exe -version | Select-Object -First 1
 
       - name: Build standalone bundle (PyInstaller)
         working-directory: platform/windows

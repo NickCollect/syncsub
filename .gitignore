@@ -18,3 +18,10 @@ venv/
 # Test scratch
 *.synced.*
 tmp/
+
+# Windows installer build artifacts
+platform/windows/bin/
+platform/windows/build/
+platform/windows/dist/
+platform/windows/Output/
+*.spec.bak

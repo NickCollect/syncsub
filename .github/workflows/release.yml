@@ -20,12 +20,12 @@ jobs:
         run: |
           python -m pip install --upgrade build
           python -m build
-      - name: Package Windows bundle
+      - name: Package lightweight Windows scripts
         run: |
           mkdir -p out
           cp -r platform/windows out/windows
-          cp README.md LICENSE out/
-          cd out && zip -r ../syncsub-windows.zip windows README.md LICENSE
+          cp README.md README.en.md LICENSE out/
+          cd out && zip -r ../syncsub-windows.zip windows README.md README.en.md LICENSE
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
@@ -33,3 +33,60 @@ jobs:
             dist/*.whl
             dist/*.tar.gz
             syncsub-windows.zip
+
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller tkinterdnd2
+          python -m pip install .
+
+      - name: Download ffmpeg / ffprobe / alass
+        shell: pwsh
+        working-directory: platform/windows
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path bin | Out-Null
+          $hdr = @{ "User-Agent" = "syncsub-ci" }
+
+          function Get-Asset($repo, $pattern) {
+            $rel = Invoke-RestMethod "https://api.github.com/repos/$repo/releases/latest" -Headers $hdr
+            ($rel.assets | Where-Object { $_.name -match $pattern } | Select-Object -First 1).browser_download_url
+          }
+
+          # ffmpeg + ffprobe
+          $ff = Get-Asset "BtbN/FFmpeg-Builds" "win64-gpl.*\.zip$"
+          Invoke-WebRequest $ff -OutFile ff.zip
+          Expand-Archive ff.zip -DestinationPath ff -Force
+          Copy-Item (Get-ChildItem ff -Recurse -Filter ffmpeg.exe   | Select-Object -First 1).FullName bin\ffmpeg.exe
+          Copy-Item (Get-ChildItem ff -Recurse -Filter ffprobe.exe  | Select-Object -First 1).FullName bin\ffprobe.exe
+
+          # alass
+          $al = Get-Asset "kaegi/alass" "windows.*\.zip$"
+          Invoke-WebRequest $al -OutFile alass.zip
+          Expand-Archive alass.zip -DestinationPath alass -Force
+          Copy-Item (Get-ChildItem alass -Recurse -Filter "alass*.exe" | Select-Object -First 1).FullName bin\alass.exe
+
+          Get-ChildItem bin
+
+      - name: Build standalone bundle (PyInstaller)
+        working-directory: platform/windows
+        run: pyinstaller syncsub.spec
+
+      - name: Build installer (Inno Setup)
+        working-directory: platform/windows
+        run: |
+          choco install innosetup -y --no-progress
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
+
+      - name: Publish installer to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: platform/windows/Output/syncsub-setup.exe

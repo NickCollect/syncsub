@@ -68,17 +68,18 @@ When it finishes, Finder jumps to the newly generated subtitle.
 
 ## Windows: step-by-step
 
-### 1. Install Python (skip if you already have it)
+### Option A (recommended, batteries included): the installer
 
-Download and install Python 3.9+ from [python.org/downloads](https://www.python.org/downloads/). On the first screen, **be sure to tick "Add Python to PATH"**, then click Install.
+Download **`syncsub-setup.exe`** from the [Releases](../../releases) page, then **double-click → Next → Next → Finish**.
 
-### 2. Run the installer
+- **No Python and no manual downloads** — `ffmpeg` and `alass` are bundled inside.
+- It adds the app to the Start Menu (and, optionally, the Desktop and "Send to").
+- If a blue "Windows protected your PC" dialog appears, click "More info" → "Run anyway".
 
-Open the unzipped `syncsub-main` folder and **double-click `install-windows.cmd`**.
+### Option B (script install, smaller download)
 
-> If a blue "Windows protected your PC" dialog appears, click "More info" → "Run anyway".
-
-It downloads `ffmpeg` and `alass`, installs the tool, and creates Start Menu and "Send to" shortcuts. Press a key to close when you see the completion message.
+1. **Install Python** 3.9+ from [python.org/downloads](https://www.python.org/downloads/); on the first screen tick **"Add Python to PATH"**.
+2. Use the green **Code → Download ZIP**, unzip, open `syncsub-main`, and **double-click `install-windows.cmd`**. It downloads `ffmpeg` and `alass`, installs the tool, and creates shortcuts.
 
 ### Usage
 

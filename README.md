@@ -68,17 +68,18 @@ bash scripts/install-macos.sh
 
 ## Windows 用户：一步步安装
 
-### 第 1 步：装 Python（已装过可跳过）
+### 方式 A（推荐，开箱即用）：下载安装包
 
-去 [python.org/downloads](https://www.python.org/downloads/) 下载并安装 Python 3.9 以上版本。**安装第一屏务必勾选「Add Python to PATH」**，再点 Install。
+去本仓库的 [Releases](../../releases) 页面下载 **`syncsub-setup.exe`**，**双击 → 一路下一步 → 完成**。
 
-### 第 2 步：运行安装程序
+- **不需要装 Python，也不用自己下载任何东西**，ffmpeg / alass 都已打包在里面。
+- 装完会在「开始菜单」（以及可选的桌面、「发送到」）里出现「字幕按内嵌时间轴对齐」。
+- 如果弹出蓝色「Windows 已保护你的电脑」，点「更多信息」→「仍要运行」。
 
-打开第一步解压出来的 `syncsub-main` 文件夹，**双击里面的 `install-windows.cmd`**。
+### 方式 B（脚本安装，体积小）：
 
-> 如果弹出蓝色「Windows 已保护你的电脑」窗口，点「更多信息」→「仍要运行」。
-
-它会自动下载 `ffmpeg`、`alass`，装好本工具，并在「开始菜单」和「发送到」里创建快捷方式。看到「安装完成」后按任意键关闭。
+1. **装 Python**：去 [python.org/downloads](https://www.python.org/downloads/) 装 Python 3.9+，第一屏务必勾选 **「Add Python to PATH」**。
+2. 在仓库点绿色 **Code → Download ZIP** 解压，打开 `syncsub-main` 文件夹，**双击 `install-windows.cmd`**。它会联网下载 `ffmpeg`、`alass`，装好工具并建快捷方式。
 
 ### 怎么用
 

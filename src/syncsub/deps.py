@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 import shutil
+import sys
 from typing import Dict, List
 
 from .i18n import t
@@ -28,9 +30,29 @@ class MissingDependency(Exception):
         super().__init__(t("missing_dep", tool=tool, hint=hint).rstrip())
 
 
+def _bundled_dirs() -> List[str]:
+    """Directories to search first when running as a frozen (PyInstaller) app."""
+    dirs: List[str] = []
+    if getattr(sys, "frozen", False):
+        meipass = getattr(sys, "_MEIPASS", "")
+        if meipass:
+            dirs.append(meipass)
+        dirs.append(os.path.dirname(sys.executable))
+    return dirs
+
+
 def resolve(tool: str) -> str:
-    """Return the absolute path of an external tool, or raise MissingDependency."""
+    """Return the absolute path of an external tool, or raise MissingDependency.
+
+    When frozen, bundled binaries shipped next to the executable take
+    precedence over whatever happens to be on PATH.
+    """
     for name in _CANDIDATES.get(tool, [tool]):
+        for directory in _bundled_dirs():
+            for ext in ("", ".exe"):
+                candidate = os.path.join(directory, name + ext)
+                if os.path.isfile(candidate):
+                    return candidate
         found = shutil.which(name)
         if found:
             return found

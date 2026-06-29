@@ -88,9 +88,12 @@ jobs:
         run: pyinstaller syncsub.spec
 
       - name: Build installer (Inno Setup)
+        shell: pwsh
         working-directory: platform/windows
         run: |
           choco install innosetup -y --no-progress
+          # Simplified Chinese wizard language (not bundled with Inno Setup).
+          Invoke-WebRequest "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl" -OutFile ChineseSimplified.isl
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
 
       - name: Publish installer to release

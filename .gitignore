@@ -24,5 +24,4 @@ platform/windows/bin/
 platform/windows/build/
 platform/windows/dist/
 platform/windows/Output/
-platform/windows/ChineseSimplified.isl
 *.spec.bak

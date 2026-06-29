@@ -17,7 +17,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from .core import AlassError, SyncError, sync
 from .deps import MissingDependency, check_all
-from .detect import DetectError, classify, list_embedded_subs
+from .detect import DetectError, classify, is_subtitle, list_embedded_subs
 from .i18n import (
     get_lang,
     has_env_override,
@@ -174,7 +174,7 @@ class App:
     # ---- input handling -------------------------------------------------
     def _on_drop(self, event) -> None:
         paths = self._parse_dnd(event.data)
-        self._set_files(paths)
+        self._add_files(paths)
 
     @staticmethod
     def _parse_dnd(data: str) -> List[Path]:
@@ -203,7 +203,25 @@ class App:
     def _pick(self) -> None:
         selected = filedialog.askopenfilenames(title=t("gui_pick_title"))
         if selected:
-            self._set_files([Path(p) for p in selected])
+            self._add_files([Path(p) for p in selected])
+
+    def _add_files(self, paths: List[Path]) -> None:
+        """Merge dropped files into the current selection.
+
+        Keeps at most one video and one subtitle, each updated to the most
+        recent matching file. This lets users drag the two files separately
+        (or re-drag to replace just one) without the second drop clearing the
+        first.
+        """
+        video: Optional[Path] = None
+        sub: Optional[Path] = None
+        for p in [*self.files, *paths]:
+            if is_subtitle(p):
+                sub = p
+            else:
+                video = p
+        merged = [p for p in (video, sub) if p is not None]
+        self._set_files(merged)
 
     def _set_files(self, paths: List[Path]) -> None:
         self.files = paths
